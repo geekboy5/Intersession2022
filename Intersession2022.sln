@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30907.101
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Quoridor", "Quoridor\Quoridor.pyproj", "{D1ECCF5E-84E4-411B-9C6F-1510A17FCFBF}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D1ECCF5E-84E4-411B-9C6F-1510A17FCFBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1ECCF5E-84E4-411B-9C6F-1510A17FCFBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {361935CE-5740-4EEC-BB90-0C012FDA63DD}
+	EndGlobalSection
+EndGlobal
