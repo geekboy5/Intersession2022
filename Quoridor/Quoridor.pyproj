@@ -31,19 +31,14 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="QuoridorVisualizer.py" />
-    <Compile Include="Players\DrDongPlayer.py" />
     <Compile Include="Game.py" />
     <Compile Include="HumanPlayer.py" />
     <Compile Include="main.py" />
-    <Compile Include="Players\MinimaxPlayer.py" />
-    <Compile Include="Players\OneStepLookaheadPlayer.py" />
-    <Compile Include="Players\RandomPlayer.py" />
+    <Compile Include="YOURNAMESPlayer.py" />
+    <Compile Include="RandomPlayer.py" />
     <Compile Include="__init__.py">
       <SubType>Code</SubType>
     </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Players\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

@@ -89,7 +89,7 @@ class HumanPlayer():
 
 
                     if event.key == pygame.K_SPACE:
-                        if fences[0] or fences[1]:
+                        if self.fences[0] or self.fences[1]:
                             self.current_selection = CurrentSelection.increment(self.current_selection)
                         redraw = True
                     if event.key == pygame.K_RIGHT:

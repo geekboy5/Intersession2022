@@ -8,8 +8,9 @@ class QuoridorGame:
     Quoridor Game class implementing the alpha-zero-general Game interface.
     """
 
-    def __init__(self, n_players = 2, visualize = False):
+    def __init__(self, n_players = 2, visualize = False, thorough_check = True):
         self._base_board = QuoridorBoard(n_players)
+        self._base_board.check_possible = thorough_check
         self.visualize = visualize
         if visualize:
             self.visualizer = QuoridorVisualizer()
@@ -35,8 +36,7 @@ class QuoridorGame:
         return self._base_board.get_win_state()
 
     def getCanonicalForm(self, board, player):
-        # Flip player from 1 to -1
-        return board #* player
+        return deepcopy(board) 
 
     def display(self, board):
         if self.visualize:

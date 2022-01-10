@@ -12,7 +12,7 @@ class Fence:
     def test_move(self, current, final):
         if self.is_horizontal:
             if (current.y == self.first.y - 1 and final.y == self.first.y) or (final.y == self.first.y - 1 and current.y == self.first.y):
-                if current.x == self.first.x or current.x + 1 == self.first.x:
+                if current.x == self.first.x or current.x == self.first.x + 1:
                     return False
                 else:
                     return True
@@ -20,12 +20,25 @@ class Fence:
                 return True
         else:
             if (current.x == self.first.x - 1 and final.x == self.first.x) or (final.x == self.first.x - 1 and current.x == self.first.x):
-                if current.y == self.first.y or current.y + 1 == self.first.y:
+                if current.y == self.first.y or current.y == self.first.y + 1:
                     return False
                 else:
                     return True
             else:
                 return True
+
+    # Find which moves are blocked by this fence
+    def forbidden_moves(self):
+        if self.is_horizontal:
+            return [(Coordinate(self.first.x, self.first.y), Coordinate(self.first.x, self.first.y - 1)),
+                    (Coordinate(self.first.x, self.first.y - 1), Coordinate(self.first.x, self.first.y)),
+                    (Coordinate(self.first.x + 1, self.first.y), Coordinate(self.first.x + 1, self.first.y - 1)),
+                    (Coordinate(self.first.x + 1, self.first.y - 1), Coordinate(self.first.x + 1, self.first.y))]
+        else:
+            return [(Coordinate(self.first.x, self.first.y), Coordinate(self.first.x - 1, self.first.y)),
+                    (Coordinate(self.first.x - 1, self.first.y), Coordinate(self.first.x, self.first.y)),
+                    (Coordinate(self.first.x, self.first.y + 1), Coordinate(self.first.x - 1, self.first.y + 1)),
+                    (Coordinate(self.first.x - 1, self.first.y + 1), Coordinate(self.first.x, self.first.y + 1))]
 
     # Check for conflicts between two fences
     def check_conflict(self, other):
@@ -58,6 +71,8 @@ class QuoridorBoard:
 
         self.horizontal_fences = []
         self.vertical_fences = []
+       # self.forbidden_moves = {}
+        self.check_possible = True
 
         if n_players == 2:
             self.pawns = [Coordinate(4, 0), Coordinate(4, 8)]
@@ -90,6 +105,11 @@ class QuoridorBoard:
         else:
             self.vertical_fences.append(new_fence)
 
+        #for coord_pair in new_fence.forbidden_moves():
+        #    if coord_pair[0] not in self.forbidden_moves:
+        #        self.forbidden_moves[coord_pair[0]] = []
+        #    self.forbidden_moves[coord_pair[0]].append(coord_pair[1])
+
         self.fences[player] -= 1
 
     # Check if this move is allowed
@@ -106,6 +126,10 @@ class QuoridorBoard:
     # Check if you can move from current to new_coord without going through any fences
     def check_fences(self, current, new_coord):
         return (current.x == new_coord.x and self.test_fences(self.horizontal_fences, current, new_coord)) or (current.y == new_coord.y and self.test_fences(self.vertical_fences, current, new_coord))
+        #if current not in self.forbidden_moves:
+        #    return True
+        #else:
+        #    return new_coord not in self.forbidden_moves[current]
 
     # Get all possible positions you can jump to if you are on current and another pawn is on move
     def possible_jumps(self, current, move):
@@ -184,8 +208,9 @@ class QuoridorBoard:
                         break
                 if found_conflict:
                     continue
-                #if not self.check_if_possible(potential_fence):
-                #    continue
+                if self.check_possible:
+                    if not self.check_if_possible(potential_fence):
+                        continue
                 fences.append(QuoridorMove.add_fence(potential_fence, self.current_player))
         # Vertical
         for ix in range(1, 9):
@@ -198,8 +223,9 @@ class QuoridorBoard:
                         break
                 if found_conflict:
                     continue
-                #if not self.check_if_possible(potential_fence):
-                #    continue
+                if self.check_possible:
+                    if not self.check_if_possible(potential_fence):
+                        continue
                 fences.append(QuoridorMove.add_fence(potential_fence, self.current_player))
         return fences
 
