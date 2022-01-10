@@ -19,7 +19,7 @@ class YOURNAMESPlayer():
                 return new_coord.y > board.pawns[0].y
             if player == 1:
                 return new_coord.y < board.pawns[1].y
-        if len(self.pawns) == 4:
+        if len(board.pawns) == 4:
             if player == 0:
                 return new_coord.y > board.pawns[0].y
             if player == 1:

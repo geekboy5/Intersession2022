@@ -246,8 +246,8 @@ class QuoridorBoard:
         else:
             self.vertical_fences.append(new_fence)
 
-        # Dijkstra's algorithm, simply
-        already_tested = []
+        # Dijkstra's algorithm, modified
+        already_tested = {}
         # Start with current pawn location
         to_be_tested = [self.pawns[player]]
         while to_be_tested:
@@ -262,7 +262,7 @@ class QuoridorBoard:
                             self.vertical_fences.pop(len(self.vertical_fences) - 1)
                         return True
                     if not new_point in already_tested:
-                        already_tested.append(new_point)
+                        already_tested[new_point] = 0
                         new_to_be_tested.append(new_point)
             to_be_tested = new_to_be_tested
 
