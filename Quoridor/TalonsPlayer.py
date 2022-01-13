@@ -2,7 +2,10 @@ from copy import deepcopy
 import math
 from re import search
 import time
-import Coordinate
+from Coordinate import Coordinate
+import random
+from QuoridorBoard import Fence
+from QuoridorMove import QuoridorMove
 
 class TalonsPlayer():
     def __init__(self, game):
@@ -17,7 +20,34 @@ class TalonsPlayer():
                 if(self.moves_in_right_direction(board, move.coord, board.current_player)):
                     return move
 
-        depth = 1
+        # try to place vertical fence next to player
+        # if board.fences[board.current_player] > 8:
+        if board.fences[board.current_player] > 8:
+            next_enemy = (board.current_player + 1) % len(board.pawns)
+
+            if board.fences[board.current_player] == 10:
+                # try to immediately place vertical wall against opponent (intermediate opening)
+                enemy_coord = board.pawns[next_enemy]
+                is_horizontal_side_wall = self.get_player_starting_coord(board, next_enemy).y == 4
+
+                if is_horizontal_side_wall:
+                    fence_y = max(enemy_coord.y, 1)
+                    fence_x = min(enemy_coord.x, 7)
+                else:
+                    fence_y = min(enemy_coord.y, 7)
+                    fence_x = max(enemy_coord.x, 1)
+                
+                test_fence = Fence(Coordinate(fence_x, fence_y), is_horizontal_side_wall)
+                if board.check_if_possible(test_fence):
+                    return QuoridorMove.add_fence(test_fence, board.current_player)
+            if random.randint(0, 10) > 7:
+                enemy_path = self.path_to_win(board, next_enemy)
+                for fence_move in board.get_legal_fences(board.current_player):
+                    potential_enemy_path = self.path_to_win(self.game.getNextState(board, board.current_player, fence_move)[0], next_enemy)
+                    if len(potential_enemy_path) > len(enemy_path):
+                        return fence_move
+
+        depth = 2
         best_heuristic = None
         best_move = None
 
@@ -59,8 +89,12 @@ class TalonsPlayer():
             if p == player_ind:
                 continue
             enemy_path = self.path_to_win(board, p)
-            enemy_sum += len(enemy_path)
+            if enemy_path is not None:
+                enemy_sum += len(enemy_path)
         player_path = self.path_to_win(board, player_ind)
+        # duct tape to fix unknown error where path to win returns none
+        if player_path is None:
+            return enemy_sum
         return enemy_sum - len(player_path)
     
     # returns array of moves containing shortest path to win using A* pathfinding
@@ -137,16 +171,16 @@ class TalonsPlayer():
 
     def get_player_starting_coord(self, board, player):
         if player == 0:
-            return Coordinate.Coordinate(4, 0)
+            return Coordinate(4, 0)
         if player == 1:
             if len(board.pawns) == 2:
-                return Coordinate.Coordinate(4, 8)
+                return Coordinate(4, 8)
             elif len(board.pawns) == 4:
-                return Coordinate.Coordinate(0, 4)
+                return Coordinate(0, 4)
         if player == 2:
-            return Coordinate.Coordinate(4, 8)
+            return Coordinate(4, 8)
         if player == 3:
-            return Coordinate.Coordinate(8, 4)
+            return Coordinate(8, 4)
 
 
 # utility function for printing coordinates
