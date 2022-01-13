@@ -1,0 +1,214 @@
+from copy import deepcopy
+import math
+from re import search
+import time
+import Coordinate
+
+class TalonsPlayer():
+    def __init__(self, game):
+        self.game = game
+
+
+    def play(self, board, valid_moves):
+        # try to move forward if in starting position
+        if board.pawns[board.current_player] == self.get_player_starting_coord(board, board.current_player):
+            for move in board.get_legal_moves_for_player(board.current_player):
+                # move directly towards goal
+                if(self.moves_in_right_direction(board, move.coord, board.current_player)):
+                    return move
+
+        depth = 1
+        best_heuristic = None
+        best_move = None
+
+        # valid_moves = board.get_legal_moves_for_player(board.current_player)
+        start_time = time.time()
+        max_time = 5
+        for i, move in enumerate(valid_moves):
+            # try a move, evaluate
+            if time.time() >= start_time + max_time and best_move is not None:
+                break
+            potential_board = self.game.getNextState(board, board.current_player, move)[0]
+            minimaxValue = self.get_minimax_heuristic(potential_board)
+            # minimaxValue = self.minimax_best_heuristic(potential_board, depth)
+            if best_heuristic == None or minimaxValue > best_heuristic:
+                best_heuristic = minimaxValue
+                best_move = move
+        return best_move
+    
+    # returns best heuristic value from depth search
+    def minimax_best_heuristic(self, board, depth):
+        if depth == 0: return self.get_minimax_heuristic(board)
+        valid_moves = board.get_valid_moves()
+        best = None
+
+        for move in valid_moves:
+            cur_board = self.game.getNextState(board, board.current_player, move)[0]
+            test_score = self.minimax_best_heuristic(cur_board, depth - 1)
+            if best == None or test_score > self.get_minimax_heuristic(cur_board): 
+                best = test_score
+        return best
+    
+    # returns heuristic score based on board state
+    def get_minimax_heuristic(self, board):
+        # return player opp dist - player dist
+        # future dist, predict future opponent moves, look for easily closable gaps along path?
+        enemy_sum = 0
+        player_ind = (board.current_player - 1) % len(board.pawns)
+        for p in range(len(board.pawns)):
+            if p == player_ind:
+                continue
+            enemy_path = self.path_to_win(board, p)
+            enemy_sum += len(enemy_path)
+        player_path = self.path_to_win(board, player_ind)
+        return enemy_sum - len(player_path)
+    
+    # returns array of moves containing shortest path to win using A* pathfinding
+    def path_to_win(self, board, player):
+        win_condition = board.get_target(player)
+
+        # list of nodes to store parent and coord
+        start_node = Node(board.pawns[player], None)
+        start_node.setHeuristics(board, player)
+        nodes_to_search = [start_node]
+        searched_nodes = []
+
+        # while still moves to be searched
+        while len(nodes_to_search) > 0:
+            current_node = None #move with lowest heuristic (euclidean distance to goal + path distance to start)
+            # cur_ind = None
+            # pick lowest heuristic node through iteration
+            for i, test_node in enumerate(nodes_to_search):
+                if current_node == None or test_node.getHeuristic() < current_node.getHeuristic():
+                    current_node = test_node
+                    # cur_ind = i
+
+            # remove current node from unsearched nodes
+            nodes_to_search.pop(nodes_to_search.index(current_node))
+            searched_nodes.append(current_node)
+
+            # check if target node reached
+            if win_condition(current_node.coord):
+                moves = []
+                backtrack_node = current_node
+                # backtrack through parent nodes to find path
+                while backtrack_node.parent != None:
+                    moves.append(backtrack_node.coord)
+                    backtrack_node = backtrack_node.parent
+                moves.reverse()
+                return moves
+            
+            # get adjacent nodes
+            new_legal_moves = board.get_legal_move_positions(current_node.coord)
+            # iterate through adjacent coords
+            for new_coord in new_legal_moves:
+                new_child_node = Node(new_coord, current_node)
+                new_child_node.setHeuristics(board, player)
+                # skip if node has already been accounted for
+                to_skip = False
+                for searched_node in searched_nodes:
+                    if new_child_node.coord.x == searched_node.coord.x and new_child_node.coord.y == searched_node.coord.y:
+                        to_skip = True
+                for to_search in nodes_to_search:
+                    if new_child_node.coord.x == searched_node.coord.x and new_child_node.coord.y == searched_node.coord.y:
+                        to_skip = True
+                    # if to_search == new_child_node and to_search.path_distance > new_child_node.path_distance: to_skip = True
+                if not to_skip: nodes_to_search.append(new_child_node)
+
+    # Determines if a given move moves the pawn toward the right point
+    def moves_in_right_direction(self, board, new_coord, player = -1):
+        if player == -1:
+            player = board.current_player
+
+        if len(board.pawns) == 2:
+            if player == 0:
+                return new_coord.y > board.pawns[0].y
+            if player == 1:
+                return new_coord.y < board.pawns[1].y
+        if len(board.pawns) == 4:
+            if player == 0:
+                return new_coord.y > board.pawns[0].y
+            if player == 1:
+                return new_coord.x > board.pawns[1].x
+            if player == 2:
+                return new_coord.y < board.pawns[2].y
+            if player == 3:
+                return new_coord.x < board.pawns[3].x
+
+    def get_player_starting_coord(self, board, player):
+        if player == 0:
+            return Coordinate.Coordinate(4, 0)
+        if player == 1:
+            if len(board.pawns) == 2:
+                return Coordinate.Coordinate(4, 8)
+            elif len(board.pawns) == 4:
+                return Coordinate.Coordinate(0, 4)
+        if player == 2:
+            return Coordinate.Coordinate(4, 8)
+        if player == 3:
+            return Coordinate.Coordinate(8, 4)
+
+
+# utility function for printing coordinates
+def coord_to_string(coord):
+    return "(" + str(coord.x) + ", " + str(coord.y) + ")"
+
+# utility function for printing route of coords
+def route_to_string(route):
+    str = ""
+    for coord in route:
+        coord_str = coord_to_string(coord)
+        str += coord_str + ", "
+    return str
+
+
+class Node:
+    def __init__(self, coord, parent = None):
+        self.coord = coord
+        self.parent = parent
+    
+    def __str__(self):
+        return coord_to_string(self.coord)
+
+    def __repr__(self):
+        return coord_to_string(self.coord)
+    
+    def __eq__(self, other):
+        if other == None: return False
+        return self.coord.x == other.coord.x and self.coord.y == other.coord.y
+    
+    def setHeuristics(self, board, player):
+        parent = self.parent
+        dist = 0
+        while parent != None:
+            dist += 1
+            parent = parent.parent
+        self.path_distance = dist
+
+        y_max = None
+        target_value = None
+        if player == 0:
+            y_max = True
+            target_value = 8
+        if player == 1:
+            if len(board.pawns) == 2:
+                y_max = True
+                target_value = 0
+            elif len(board.pawns) == 4:
+                y_max = False
+                target_value = 8
+        if player == 2:
+            y_max = True
+            target_value = 0
+        if player == 3:
+            y_max = False
+            target_value = 0
+
+        # only take into account direct line between player and goal line
+        if y_max:
+            self.euclidean_distance = abs(target_value - self.coord.y)
+        else:
+            self.euclidean_distance = abs(target_value - self.coord.x)
+
+    def getHeuristic(self):
+        return self.path_distance + self.euclidean_distance
