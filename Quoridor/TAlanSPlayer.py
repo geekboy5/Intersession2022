@@ -8,13 +8,19 @@ from QuoridorBoard import Fence
 from QuoridorMove import QuoridorMove
 from QuoridorMove import QuoridorMoveType
 
-class TalonsPlayer():
+class TAlanSPlayer():
     def __init__(self, game):
         self.game = game
         self.prev_coord = None
 
 
     def play(self, board, valid_moves):
+        # if opponent out of fences and player is closer, immediately rush goal line
+        two_player_enemy_ind = (board.current_player + 1) % 2
+        player_path = self.path_to_win(board, board.current_player)
+        if len(board.pawns) == 2 and board.fences[two_player_enemy_ind] == 0 and len(self.path_to_win(board, board.current_player)) <= len(self.path_to_win(board, two_player_enemy_ind)):
+            return QuoridorMove.move_pawn(player_path[0], board.current_player)
+
         # try to move forward if in starting position
         if self.prev_coord is None and board.pawns[board.current_player] == self.get_player_starting_coord(board, board.current_player):
             for move in board.get_legal_moves_for_player(board.current_player):
