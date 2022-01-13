@@ -1,7 +1,7 @@
 from QuoridorGame import QuoridorGame
 from HumanPlayer import HumanPlayer
 from RandomPlayer import RandomPlayer
-from YOURNAMESPlayer import YOURNAMESPlayer
+from TalonsPlayer import TalonsPlayer
 
 from Arena import Arena
 
@@ -15,7 +15,7 @@ g = QuoridorGame(n_players = 2, visualize = True, thorough_check = True)
 # all players
 rp = RandomPlayer(g).play
 hp = HumanPlayer(g).play
-yp = YOURNAMESPlayer(g).play
+yp = TalonsPlayer(g).play
 
 players = [hp, yp, rp, rp]
 arena = Arena(players, g)
