@@ -6,18 +6,21 @@ from Coordinate import Coordinate
 import random
 from QuoridorBoard import Fence
 from QuoridorMove import QuoridorMove
+from QuoridorMove import QuoridorMoveType
 
 class TalonsPlayer():
     def __init__(self, game):
         self.game = game
+        self.prev_coord = None
 
 
     def play(self, board, valid_moves):
         # try to move forward if in starting position
-        if board.pawns[board.current_player] == self.get_player_starting_coord(board, board.current_player):
+        if self.prev_coord is None and board.pawns[board.current_player] == self.get_player_starting_coord(board, board.current_player):
             for move in board.get_legal_moves_for_player(board.current_player):
                 # move directly towards goal
                 if(self.moves_in_right_direction(board, move.coord, board.current_player)):
+                    self.save_pos(board)
                     return move
 
         # try to place vertical fence next to player
@@ -39,14 +42,16 @@ class TalonsPlayer():
                 
                 test_fence = Fence(Coordinate(fence_x, fence_y), is_horizontal_side_wall)
                 if board.check_if_possible(test_fence):
+                    self.save_pos(board)
                     return QuoridorMove.add_fence(test_fence, board.current_player)
+            # 30% chance of trying to directly block enemy with fence
             if random.randint(0, 10) > 7:
                 enemy_path = self.path_to_win(board, next_enemy)
                 for fence_move in board.get_legal_fences(board.current_player):
                     potential_enemy_path = self.path_to_win(self.game.getNextState(board, board.current_player, fence_move)[0], next_enemy)
                     if len(potential_enemy_path) > len(enemy_path):
+                        self.save_pos(board)
                         return fence_move
-
         depth = 2
         best_heuristic = None
         best_move = None
@@ -64,7 +69,14 @@ class TalonsPlayer():
             if best_heuristic == None or minimaxValue > best_heuristic:
                 best_heuristic = minimaxValue
                 best_move = move
+        if self.prev_coord is not None and best_move.type == QuoridorMoveType.MOVE and best_move.coord == self.prev_coord:
+            # prevent player from repeating previous movement
+            best_move = QuoridorMove.move_pawn(self.path_to_win(board, board.current_player)[0], board.current_player)
+        self.save_pos(board)
         return best_move
+    
+    def save_pos(self, board):
+        self.prev_coord = board.pawns[board.current_player]
     
     # returns best heuristic value from depth search
     def minimax_best_heuristic(self, board, depth):
@@ -85,12 +97,9 @@ class TalonsPlayer():
         # future dist, predict future opponent moves, look for easily closable gaps along path?
         enemy_sum = 0
         player_ind = (board.current_player - 1) % len(board.pawns)
-        for p in range(len(board.pawns)):
-            if p == player_ind:
-                continue
-            enemy_path = self.path_to_win(board, p)
-            if enemy_path is not None:
-                enemy_sum += len(enemy_path)
+        # target player with opposite starting point
+        enemy_ind = board.current_player if len(board.pawns) == 2 else (player_ind + 1) % len(board.pawns)
+        enemy_sum = len(self.path_to_win(board, enemy_ind))
         player_path = self.path_to_win(board, player_ind)
         # duct tape to fix unknown error where path to win returns none
         if player_path is None:
@@ -110,12 +119,10 @@ class TalonsPlayer():
         # while still moves to be searched
         while len(nodes_to_search) > 0:
             current_node = None #move with lowest heuristic (euclidean distance to goal + path distance to start)
-            # cur_ind = None
             # pick lowest heuristic node through iteration
             for i, test_node in enumerate(nodes_to_search):
                 if current_node == None or test_node.getHeuristic() < current_node.getHeuristic():
                     current_node = test_node
-                    # cur_ind = i
 
             # remove current node from unsearched nodes
             nodes_to_search.pop(nodes_to_search.index(current_node))
@@ -130,6 +137,8 @@ class TalonsPlayer():
                     moves.append(backtrack_node.coord)
                     backtrack_node = backtrack_node.parent
                 moves.reverse()
+                if moves is None:
+                    print(f'Path from {coord_to_string(board.pawns[player])} is {route_to_string(moves)}')
                 return moves
             
             # get adjacent nodes
@@ -148,6 +157,8 @@ class TalonsPlayer():
                         to_skip = True
                     # if to_search == new_child_node and to_search.path_distance > new_child_node.path_distance: to_skip = True
                 if not to_skip: nodes_to_search.append(new_child_node)
+        print("didn't find path, returning rand move")
+        return [QuoridorMove.move_pawn(random.choice(board.get_legal_move_positions(board.pawns[player])), player)]
 
     # Determines if a given move moves the pawn toward the right point
     def moves_in_right_direction(self, board, new_coord, player = -1):
@@ -181,8 +192,7 @@ class TalonsPlayer():
             return Coordinate(4, 8)
         if player == 3:
             return Coordinate(8, 4)
-
-
+    
 # utility function for printing coordinates
 def coord_to_string(coord):
     return "(" + str(coord.x) + ", " + str(coord.y) + ")"
@@ -194,7 +204,6 @@ def route_to_string(route):
         coord_str = coord_to_string(coord)
         str += coord_str + ", "
     return str
-
 
 class Node:
     def __init__(self, coord, parent = None):
